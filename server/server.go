@@ -19,6 +19,11 @@ func (s *ITU_databaseServer) GetMessages(ctx context.Context, in *proto.Empty) (
 }
 
 func main() {
+	// we input args when running the server, like nodes in last assignment
+	// args determines what port server is started on
+
+	// every time server gets a new bid, increment logical clock and update replica server
+	// physical time needs to be transfered to replica at certain pysical time intervals, alongside a logical timestamp update
 	server := &ITU_databaseServer{messages: []string{}}
 	server.start_server()
 }
