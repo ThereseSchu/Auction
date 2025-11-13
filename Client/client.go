@@ -23,8 +23,5 @@ func main() {
 	}
 
 	messages, err := client.GetMessages(context.Background(), &proto.Empty{})
-
-	for _, message := range messages.Message {
-		log.Println(" - " + message)
-	}
+	_ = messages
 }

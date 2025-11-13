@@ -20,11 +20,6 @@ func (s *ITU_databaseServer) GetMessages(ctx context.Context, in *proto.Empty) (
 
 func main() {
 	server := &ITU_databaseServer{messages: []string{}}
-	server.messages = append(server.messages, "Message 1")
-	server.messages = append(server.messages, "Message 2")
-	server.messages = append(server.messages, "Message 3")
-	server.messages = append(server.messages, "Message 4")
-
 	server.start_server()
 }
 
