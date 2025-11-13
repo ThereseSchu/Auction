@@ -1,16 +1,32 @@
 syntax = "proto3";
 option go_package = "ITUDataBase/grpc/proto";
 
-message Message {
-  // In a .proto file, when you declare a field as repeated, it means:
-  // That field is like an array or list.
-  // It can contain zero, one, or many values of the given type.
+message Bid { //Bid tager et ID, et bud, en seq et slambert timestamp
+  int32 id = 1;
+  int32 bid = 2;
+  int32 timestamp = 4;
+}
 
-  repeated string message = 1;
+message Ack {
+  int32 timestamp = 1;
+}
+
+message Result {
+  int32 idFromHighestBidder = 1;
+  int32 highestBid = 2;
+  bool auctionIsOngoing = 3;
+  int32 timeLeft = 4; //Kan fjernes hvis kritisk - T J
+}
+
+message Bidder {
+  int32 id = 1;
+  int32 timestamp = 2; //Skal timestamp gives?? -T J
 }
 
 message Empty{}
 
  service ITUDatabase {
-   rpc GetMessages (Empty) returns (Message) {};
+  rpc PlaceBid (Bid) returns (Ack) {};
+  rpc PrintStatus (Empty) returns (Result) {};
+  rpc AddBidder (Bidder) returns (Empty) {};
  }
