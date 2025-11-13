@@ -12,5 +12,5 @@ message Message {
 message Empty{}
 
  service ITUDatabase {
-   rpc GetMessages (Empty) returns (Message) {}; // A method which can be used by other classes
+   rpc GetMessages (Empty) returns (Message) {};
  }

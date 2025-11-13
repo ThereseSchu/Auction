@@ -3,10 +3,11 @@ package main
 import (
 	proto "ITUserver/grpc"
 	"context"
-	"log"
-
+	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"log"
+	"time"
 )
 
 func main() {
@@ -18,18 +19,42 @@ func main() {
 	// get message should be result
 	// we keep getmessage for error checking
 
-	conn, err := grpc.NewClient("localhost:8000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	currentID := 1
 
-	if err != nil {
-		log.Fatalf("Count not connect")
+	for {
+		// port := fmt.Sprintf("port:800%d", currentID)
+		port := fmt.Sprintf("localhost:800%d", currentID)
+		log.Printf("Attempting to connect to %s...", port)
+
+		conn, err := grpc.NewClient(port, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+		if err != nil {
+			log.Printf("Failed to create client for %s: %v", port, err)
+			currentID = switchID(currentID)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		client := proto.NewITUDatabaseClient(conn)
+		messages, err := client.GetMessages(context.Background(), &proto.Empty{})
+
+		if err != nil {
+			log.Printf("Failed to GetMessages from %s: %v", port, err)
+			currentID = switchID(currentID)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		log.Printf("Successfully got messages from %s", port)
+		_ = messages
+
+		time.Sleep(10 * time.Second)
 	}
+}
 
-	client := proto.NewITUDatabaseClient(conn)
-
-	if err != nil {
-		log.Fatalf("WE DID NOT RECIEVE OR FAILED TO SEND")
+func switchID(id int) int {
+	if id == 1 {
+		return 2
 	}
-
-	messages, err := client.GetMessages(context.Background(), &proto.Empty{})
-	_ = messages
+	return 1
 }

@@ -42,7 +42,7 @@ func (s *ITU_databaseServer) start_server(ID int32) {
 		log.Fatalf("SERVER WONT WORK")
 	}
 
-	log.Println("Server Started")
+	log.Println("Server Started on " + port)
 
 	proto.RegisterITUDatabaseServer(grpcserver, s)
 
