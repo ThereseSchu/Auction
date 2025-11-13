@@ -1,2 +1,1 @@
-# Auction
-Project for distributed systems
+# Chitchatty
