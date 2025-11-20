@@ -17,17 +17,16 @@ import (
 type ITU_databaseServer struct {
 	proto.UnimplementedITUDatabaseServer
 	replicaClient proto.ITUDatabaseClient
-	messages []string
-	auction Auction
+	messages      []string
+	auction       Auction
 }
 
 type Auction struct {
-	ongoing bool
-	highestBid int64
-	timestamp int64
+	ongoing       bool
+	highestBid    int64
+	timestamp     int64
 	highestBidder string
-	endTime int64
-
+	endTime       int64
 }
 
 func main() {
@@ -39,16 +38,11 @@ func main() {
 		mainServerClient = connectReplica()
 	}
 
-
-	
-
-	// every time server gets a new bid, increment logical clock and update replica server
-	// physical time needs to be transfered to replica at certain pysical time intervals, alongside a logical timestamp update
 	server := &ITU_databaseServer{
-		messages: []string{},
-		auction: Auction{},
+		messages:      []string{},
+		auction:       Auction{},
 		replicaClient: mainServerClient}
-	
+
 	server.start_server(int32(ID))
 }
 
@@ -101,8 +95,7 @@ func connectReplica() proto.ITUDatabaseClient {
 func (s *ITU_databaseServer) PlaceBid(ctx context.Context, in *proto.Bid) (*proto.Ack, error) {
 
 	if s.replicaClient != nil {
-		// example of how to send to other server
-		s.replicaClient.TestConnection(ctx, &proto.Empty{})
+		doBackup(ctx, s)
 	}
 
 	return &proto.Ack{}, nil
@@ -111,8 +104,7 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, in *proto.Bid) (*prot
 func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
 
 	if s.replicaClient != nil {
-		// example of how to send to other server
-		s.replicaClient.TestConnection(ctx, &proto.Empty{})
+		doBackup(ctx, s)
 	}
 
 	return &proto.Result{}, nil
@@ -121,21 +113,36 @@ func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (
 func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
 
 	if s.replicaClient != nil {
-		// example of how to send to other server
-		s.replicaClient.TestConnection(ctx, &proto.Empty{})
+		doBackup(ctx, s)
 	}
 
 	return &proto.Empty{}, nil
 }
-func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64){
+
+func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (*proto.Bid, error) {
+
+	// server recieved backup here, returns bid.
+	// but only message part of bid should be used
+
+	return &proto.Bid{}, nil
+}
+
+func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64) {
 	s.auction = Auction{
-		ongoing: true,
-		highestBid: bidAmount,
-		timestamp: timestamp,
+		ongoing:       true,
+		highestBid:    bidAmount,
+		timestamp:     timestamp,
 		highestBidder: name,
-		endTime: timestamp + 100,
-		
+		endTime:       timestamp + 100,
 	}
 }
 
-//
+func doBackup(ctx context.Context, s *ITU_databaseServer) {
+	s.replicaClient.SendBackup(ctx, &proto.Backup{
+		Ongoing:       s.auction.ongoing,
+		HigestBid:     s.auction.highestBid,
+		Timestamp:     s.auction.timestamp,
+		HighestBidder: s.auction.highestBidder,
+		EndTime:       s.auction.endTime,
+	})
+}

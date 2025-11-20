@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v6.33.1
-// source: grpc/proto.proto
+// source: proto.proto
 
 package grpc
 
@@ -32,7 +32,7 @@ type Bid struct {
 
 func (x *Bid) Reset() {
 	*x = Bid{}
-	mi := &file_grpc_proto_proto_msgTypes[0]
+	mi := &file_proto_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *Bid) String() string {
 func (*Bid) ProtoMessage() {}
 
 func (x *Bid) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_proto_proto_msgTypes[0]
+	mi := &file_proto_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *Bid) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Bid.ProtoReflect.Descriptor instead.
 func (*Bid) Descriptor() ([]byte, []int) {
-	return file_grpc_proto_proto_rawDescGZIP(), []int{0}
+	return file_proto_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Bid) GetId() string {
@@ -90,7 +90,7 @@ type Ack struct {
 
 func (x *Ack) Reset() {
 	*x = Ack{}
-	mi := &file_grpc_proto_proto_msgTypes[1]
+	mi := &file_proto_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -102,7 +102,7 @@ func (x *Ack) String() string {
 func (*Ack) ProtoMessage() {}
 
 func (x *Ack) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_proto_proto_msgTypes[1]
+	mi := &file_proto_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -115,7 +115,7 @@ func (x *Ack) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ack.ProtoReflect.Descriptor instead.
 func (*Ack) Descriptor() ([]byte, []int) {
-	return file_grpc_proto_proto_rawDescGZIP(), []int{1}
+	return file_proto_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Ack) GetTimestamp() int32 {
@@ -137,7 +137,7 @@ type Result struct {
 
 func (x *Result) Reset() {
 	*x = Result{}
-	mi := &file_grpc_proto_proto_msgTypes[2]
+	mi := &file_proto_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -149,7 +149,7 @@ func (x *Result) String() string {
 func (*Result) ProtoMessage() {}
 
 func (x *Result) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_proto_proto_msgTypes[2]
+	mi := &file_proto_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,7 +162,7 @@ func (x *Result) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Result.ProtoReflect.Descriptor instead.
 func (*Result) Descriptor() ([]byte, []int) {
-	return file_grpc_proto_proto_rawDescGZIP(), []int{2}
+	return file_proto_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Result) GetIdFromHighestBidder() int64 {
@@ -203,7 +203,7 @@ type Bidder struct {
 
 func (x *Bidder) Reset() {
 	*x = Bidder{}
-	mi := &file_grpc_proto_proto_msgTypes[3]
+	mi := &file_proto_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -215,7 +215,7 @@ func (x *Bidder) String() string {
 func (*Bidder) ProtoMessage() {}
 
 func (x *Bidder) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_proto_proto_msgTypes[3]
+	mi := &file_proto_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -228,7 +228,7 @@ func (x *Bidder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Bidder.ProtoReflect.Descriptor instead.
 func (*Bidder) Descriptor() ([]byte, []int) {
-	return file_grpc_proto_proto_rawDescGZIP(), []int{3}
+	return file_proto_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Bidder) GetId() int32 {
@@ -245,6 +245,82 @@ func (x *Bidder) GetTimestamp() int32 {
 	return 0
 }
 
+type Backup struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ongoing       bool                   `protobuf:"varint,1,opt,name=ongoing,proto3" json:"ongoing,omitempty"`
+	HigestBid     int64                  `protobuf:"varint,2,opt,name=higestBid,proto3" json:"higestBid,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	HighestBidder string                 `protobuf:"bytes,4,opt,name=highestBidder,proto3" json:"highestBidder,omitempty"`
+	EndTime       int64                  `protobuf:"varint,5,opt,name=endTime,proto3" json:"endTime,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Backup) Reset() {
+	*x = Backup{}
+	mi := &file_proto_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Backup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Backup) ProtoMessage() {}
+
+func (x *Backup) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Backup.ProtoReflect.Descriptor instead.
+func (*Backup) Descriptor() ([]byte, []int) {
+	return file_proto_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Backup) GetOngoing() bool {
+	if x != nil {
+		return x.Ongoing
+	}
+	return false
+}
+
+func (x *Backup) GetHigestBid() int64 {
+	if x != nil {
+		return x.HigestBid
+	}
+	return 0
+}
+
+func (x *Backup) GetTimestamp() int64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *Backup) GetHighestBidder() string {
+	if x != nil {
+		return x.HighestBidder
+	}
+	return ""
+}
+
+func (x *Backup) GetEndTime() int64 {
+	if x != nil {
+		return x.EndTime
+	}
+	return 0
+}
+
 type Empty struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -253,7 +329,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_grpc_proto_proto_msgTypes[4]
+	mi := &file_proto_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -265,7 +341,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_grpc_proto_proto_msgTypes[4]
+	mi := &file_proto_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -278,14 +354,14 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_grpc_proto_proto_rawDescGZIP(), []int{4}
+	return file_proto_proto_rawDescGZIP(), []int{5}
 }
 
-var File_grpc_proto_proto protoreflect.FileDescriptor
+var File_proto_proto protoreflect.FileDescriptor
 
-const file_grpc_proto_proto_rawDesc = "" +
+const file_proto_proto_rawDesc = "" +
 	"\n" +
-	"\x10grpc/proto.proto\"E\n" +
+	"\vproto.proto\"E\n" +
 	"\x03Bid\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
 	"\x03bid\x18\x02 \x01(\x03R\x03bid\x12\x1c\n" +
@@ -301,70 +377,81 @@ const file_grpc_proto_proto_rawDesc = "" +
 	"\btimeLeft\x18\x04 \x01(\x03R\btimeLeft\"6\n" +
 	"\x06Bidder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x1c\n" +
-	"\ttimestamp\x18\x02 \x01(\x05R\ttimestamp\"\a\n" +
-	"\x05Empty2\x8d\x01\n" +
+	"\ttimestamp\x18\x02 \x01(\x05R\ttimestamp\"\x9e\x01\n" +
+	"\x06Backup\x12\x18\n" +
+	"\aongoing\x18\x01 \x01(\bR\aongoing\x12\x1c\n" +
+	"\thigestBid\x18\x02 \x01(\x03R\thigestBid\x12\x1c\n" +
+	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\x12$\n" +
+	"\rhighestBidder\x18\x04 \x01(\tR\rhighestBidder\x12\x18\n" +
+	"\aendTime\x18\x05 \x01(\x03R\aendTime\"\a\n" +
+	"\x05Empty2\xac\x01\n" +
 	"\vITUDatabase\x12\"\n" +
 	"\x0eTestConnection\x12\x06.Empty\x1a\x06.Empty\"\x00\x12\x18\n" +
 	"\bPlaceBid\x12\x04.Bid\x1a\x04.Ack\"\x00\x12 \n" +
 	"\vPrintStatus\x12\x06.Empty\x1a\a.Result\"\x00\x12\x1e\n" +
-	"\tAddBidder\x12\a.Bidder\x1a\x06.Empty\"\x00B\x10Z\x0eITUserver/grpcb\x06proto3"
+	"\tAddBidder\x12\a.Bidder\x1a\x06.Empty\"\x00\x12\x1d\n" +
+	"\n" +
+	"SendBackup\x12\a.Backup\x1a\x04.Bid\"\x00B\x10Z\x0eITUserver/grpcb\x06proto3"
 
 var (
-	file_grpc_proto_proto_rawDescOnce sync.Once
-	file_grpc_proto_proto_rawDescData []byte
+	file_proto_proto_rawDescOnce sync.Once
+	file_proto_proto_rawDescData []byte
 )
 
-func file_grpc_proto_proto_rawDescGZIP() []byte {
-	file_grpc_proto_proto_rawDescOnce.Do(func() {
-		file_grpc_proto_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_grpc_proto_proto_rawDesc), len(file_grpc_proto_proto_rawDesc)))
+func file_proto_proto_rawDescGZIP() []byte {
+	file_proto_proto_rawDescOnce.Do(func() {
+		file_proto_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_proto_rawDesc), len(file_proto_proto_rawDesc)))
 	})
-	return file_grpc_proto_proto_rawDescData
+	return file_proto_proto_rawDescData
 }
 
-var file_grpc_proto_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_grpc_proto_proto_goTypes = []any{
+var file_proto_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_proto_goTypes = []any{
 	(*Bid)(nil),    // 0: Bid
 	(*Ack)(nil),    // 1: Ack
 	(*Result)(nil), // 2: Result
 	(*Bidder)(nil), // 3: Bidder
-	(*Empty)(nil),  // 4: Empty
+	(*Backup)(nil), // 4: Backup
+	(*Empty)(nil),  // 5: Empty
 }
-var file_grpc_proto_proto_depIdxs = []int32{
-	4, // 0: ITUDatabase.TestConnection:input_type -> Empty
+var file_proto_proto_depIdxs = []int32{
+	5, // 0: ITUDatabase.TestConnection:input_type -> Empty
 	0, // 1: ITUDatabase.PlaceBid:input_type -> Bid
-	4, // 2: ITUDatabase.PrintStatus:input_type -> Empty
+	5, // 2: ITUDatabase.PrintStatus:input_type -> Empty
 	3, // 3: ITUDatabase.AddBidder:input_type -> Bidder
-	4, // 4: ITUDatabase.TestConnection:output_type -> Empty
-	1, // 5: ITUDatabase.PlaceBid:output_type -> Ack
-	2, // 6: ITUDatabase.PrintStatus:output_type -> Result
-	4, // 7: ITUDatabase.AddBidder:output_type -> Empty
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
+	4, // 4: ITUDatabase.SendBackup:input_type -> Backup
+	5, // 5: ITUDatabase.TestConnection:output_type -> Empty
+	1, // 6: ITUDatabase.PlaceBid:output_type -> Ack
+	2, // 7: ITUDatabase.PrintStatus:output_type -> Result
+	5, // 8: ITUDatabase.AddBidder:output_type -> Empty
+	0, // 9: ITUDatabase.SendBackup:output_type -> Bid
+	5, // [5:10] is the sub-list for method output_type
+	0, // [0:5] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_grpc_proto_proto_init() }
-func file_grpc_proto_proto_init() {
-	if File_grpc_proto_proto != nil {
+func init() { file_proto_proto_init() }
+func file_proto_proto_init() {
+	if File_proto_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_grpc_proto_proto_rawDesc), len(file_grpc_proto_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_proto_rawDesc), len(file_proto_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_grpc_proto_proto_goTypes,
-		DependencyIndexes: file_grpc_proto_proto_depIdxs,
-		MessageInfos:      file_grpc_proto_proto_msgTypes,
+		GoTypes:           file_proto_proto_goTypes,
+		DependencyIndexes: file_proto_proto_depIdxs,
+		MessageInfos:      file_proto_proto_msgTypes,
 	}.Build()
-	File_grpc_proto_proto = out.File
-	file_grpc_proto_proto_goTypes = nil
-	file_grpc_proto_proto_depIdxs = nil
+	File_proto_proto = out.File
+	file_proto_proto_goTypes = nil
+	file_proto_proto_depIdxs = nil
 }

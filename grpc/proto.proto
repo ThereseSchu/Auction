@@ -23,6 +23,14 @@ message Bidder {
   int32 timestamp = 2; //Skal timestamp gives?? -T J
 }
 
+message Backup {
+  bool ongoing = 1;
+  int64 higestBid = 2;
+  int64 timestamp = 3;
+  string highestBidder = 4;
+  int64 endTime = 5;
+}
+
 message Empty{}
 
  service ITUDatabase {
@@ -30,4 +38,5 @@ message Empty{}
   rpc PlaceBid (Bid) returns (Ack) {};
   rpc PrintStatus (Empty) returns (Result) {};
   rpc AddBidder (Bidder) returns (Empty) {};
+  rpc SendBackup (Backup) returns (Bid) {};
  }

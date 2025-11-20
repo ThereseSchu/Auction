@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.33.1
-// source: grpc/proto.proto
+// source: proto.proto
 
 package grpc
 
@@ -23,6 +23,7 @@ const (
 	ITUDatabase_PlaceBid_FullMethodName       = "/ITUDatabase/PlaceBid"
 	ITUDatabase_PrintStatus_FullMethodName    = "/ITUDatabase/PrintStatus"
 	ITUDatabase_AddBidder_FullMethodName      = "/ITUDatabase/AddBidder"
+	ITUDatabase_SendBackup_FullMethodName     = "/ITUDatabase/SendBackup"
 )
 
 // ITUDatabaseClient is the client API for ITUDatabase service.
@@ -33,6 +34,7 @@ type ITUDatabaseClient interface {
 	PlaceBid(ctx context.Context, in *Bid, opts ...grpc.CallOption) (*Ack, error)
 	PrintStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Result, error)
 	AddBidder(ctx context.Context, in *Bidder, opts ...grpc.CallOption) (*Empty, error)
+	SendBackup(ctx context.Context, in *Backup, opts ...grpc.CallOption) (*Bid, error)
 }
 
 type iTUDatabaseClient struct {
@@ -83,6 +85,16 @@ func (c *iTUDatabaseClient) AddBidder(ctx context.Context, in *Bidder, opts ...g
 	return out, nil
 }
 
+func (c *iTUDatabaseClient) SendBackup(ctx context.Context, in *Backup, opts ...grpc.CallOption) (*Bid, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Bid)
+	err := c.cc.Invoke(ctx, ITUDatabase_SendBackup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ITUDatabaseServer is the server API for ITUDatabase service.
 // All implementations must embed UnimplementedITUDatabaseServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type ITUDatabaseServer interface {
 	PlaceBid(context.Context, *Bid) (*Ack, error)
 	PrintStatus(context.Context, *Empty) (*Result, error)
 	AddBidder(context.Context, *Bidder) (*Empty, error)
+	SendBackup(context.Context, *Backup) (*Bid, error)
 	mustEmbedUnimplementedITUDatabaseServer()
 }
 
@@ -112,6 +125,9 @@ func (UnimplementedITUDatabaseServer) PrintStatus(context.Context, *Empty) (*Res
 }
 func (UnimplementedITUDatabaseServer) AddBidder(context.Context, *Bidder) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddBidder not implemented")
+}
+func (UnimplementedITUDatabaseServer) SendBackup(context.Context, *Backup) (*Bid, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendBackup not implemented")
 }
 func (UnimplementedITUDatabaseServer) mustEmbedUnimplementedITUDatabaseServer() {}
 func (UnimplementedITUDatabaseServer) testEmbeddedByValue()                     {}
@@ -206,6 +222,24 @@ func _ITUDatabase_AddBidder_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ITUDatabase_SendBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Backup)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ITUDatabaseServer).SendBackup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ITUDatabase_SendBackup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ITUDatabaseServer).SendBackup(ctx, req.(*Backup))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ITUDatabase_ServiceDesc is the grpc.ServiceDesc for ITUDatabase service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -229,7 +263,11 @@ var ITUDatabase_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "AddBidder",
 			Handler:    _ITUDatabase_AddBidder_Handler,
 		},
+		{
+			MethodName: "SendBackup",
+			Handler:    _ITUDatabase_SendBackup_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "grpc/proto.proto",
+	Metadata: "proto.proto",
 }
