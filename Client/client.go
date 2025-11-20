@@ -38,7 +38,8 @@ func main() {
 
 			continue
 		}
-
+	
+		var clock = NewClock()
 		client := proto.NewITUDatabaseClient(conn)
 		messages, err := client.GetMessages(context.Background(), &proto.Empty{})
 
@@ -74,6 +75,8 @@ func bid() {
 	// Bid
 
 	// Wait for acknowledgement	z
+
+	//clock.incriment
 }
 
 func status() {
