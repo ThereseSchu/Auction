@@ -16,8 +16,8 @@ import (
 )
 
 type Client struct {
-	username  string
-	timestamp int64
+	username string
+	clock    *Clock
 }
 
 func main() {
@@ -45,8 +45,7 @@ func main() {
 
 			continue
 		}
-	
-		var clock = NewClock()
+
 		client := proto.NewITUDatabaseClient(conn)
 
 		_, err = client.GetMessages(context.Background(), &proto.Empty{})
@@ -58,6 +57,7 @@ func main() {
 		}
 
 		var clientstruct = new(Client)
+		clientstruct.clock = NewClock()
 
 		clientstruct.username = createUser()
 
@@ -94,14 +94,12 @@ func bid(clientstruct *Client, amount int64, client proto.ITUDatabaseClient) {
 	_, err := client.PlaceBid(context.Background(), &proto.Bid{
 		Id:        clientstruct.username,
 		Bid:       amount,
-		Timestamp: clientstruct.timestamp,
+		Timestamp: int64(clientstruct.clock.GetTime()),
 	})
 	if err != nil {
 		return
 	}
-	// Wait for acknowledgement	z
-
-	//clock.incriment
+	clientstruct.clock.Increment()
 }
 
 func status(clientstruct *Client, client proto.ITUDatabaseClient) {
@@ -110,6 +108,7 @@ func status(clientstruct *Client, client proto.ITUDatabaseClient) {
 	if err != nil {
 		return
 	}
+	clientstruct.clock.Increment()
 }
 
 func createUser() string {
