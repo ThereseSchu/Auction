@@ -76,7 +76,7 @@ func bid() {
 
 	// Wait for acknowledgement	z
 
-	//clock.incriment
+	//clock.Increment()
 }
 
 func status() {
