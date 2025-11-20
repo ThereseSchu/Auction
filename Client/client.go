@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -40,8 +41,7 @@ func main() {
 		}
 
 		client := proto.NewITUDatabaseClient(conn)
-		messages, err := client.GetMessages(context.Background(), &proto.Empty{})
-
+		_, err = client.GetMessages(context.Background(), &proto.Empty{})
 		if err != nil {
 			log.Printf("Failed to GetMessages from %s: %v", port, err)
 			currentID = switchID(currentID)
@@ -52,13 +52,7 @@ func main() {
 		var username = createUser()
 
 		for {
-			if os.Args[0] == "Bid" {
-				bid()
-			} else if os.Args[0] == "Status" {
-
-			} else {
-
-			}
+			handleUserInput(username)
 		}
 	}
 }
@@ -70,13 +64,27 @@ func switchID(id int) int {
 	return 1
 }
 
-func bid() {
+func handleUserInput(username string) {
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		var input = strings.Split(scanner.Text(), " ")
+		if input[0] == "Bid" {
+			bid(username, input[1])
+		} else if input[0] == "Status" {
+			status(username)
+		} else {
+			log.Printf("Unknown command: %s", os.Args[0])
+		}
+	}
+}
+
+func bid(username string, amount string) {
 	// Bid
 
 	// Wait for acknowledgement	z
 }
 
-func status() {
+func status(username string) {
 	// if auction not finished send status
 
 	// if auction finished send result

@@ -17,9 +17,6 @@ type ITU_databaseServer struct {
 	messages []string
 }
 
-type ActiveBidders struct {
-}
-
 func (s *ITU_databaseServer) GetMessages(ctx context.Context, in *proto.Empty) (*proto.Message, error) {
 	return &proto.Message{Message: s.messages}, nil
 }
