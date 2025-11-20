@@ -8,27 +8,28 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type ITU_databaseServer struct {
 	proto.UnimplementedITUDatabaseServer
-	messages []string
-}
-
-func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
-	return &proto.Empty{}, nil
+	messages         []string
+	mainServerClient proto.ITUDatabaseClient
 }
 
 func main() {
 	ID, _ := strconv.ParseInt(os.Args[1], 10, 32)
-	// we input args when running the server, like nodes in last assignment
-	// args determines what port server is started on
 
-	// every time server gets a new bid, increment logical clock and update replica server
-	// physical time needs to be transfered to replica at certain pysical time intervals, alongside a logical timestamp update
-	server := &ITU_databaseServer{messages: []string{}}
+	var mainServerClient proto.ITUDatabaseClient
+
+	if ID == 1 {
+		mainServerClient = connectReplica()
+	}
+
+	server := &ITU_databaseServer{mainServerClient: mainServerClient}
 	server.start_server(int32(ID))
 }
 
@@ -49,8 +50,32 @@ func (s *ITU_databaseServer) start_server(ID int32) {
 	err = grpcserver.Serve(listener)
 }
 
-func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Empty) (*proto.Bid, error) {
+func connectReplica() proto.ITUDatabaseClient {
+	conn, err := grpc.NewClient("localhost:8002", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	client := proto.NewITUDatabaseClient(conn)
 
+	for {
+		_, err = client.TestConnection(context.Background(), &proto.Empty{})
+
+		if err != nil {
+			log.Printf("Failed TestConnection to %s: %v", "ReplicaServer", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		log.Println("Successfully connected to ReplicaServer!")
+		return client
+	}
 }
 
-//
+func (s *ITU_databaseServer) PlaceBid(ctx context.Context, in *proto.Bid) (*proto.Ack, error) {
+	return &proto.Ack{}, nil
+}
+
+func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
+	return &proto.Result{}, nil
+}
+
+func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
+	return &proto.Empty{}, nil
+}
