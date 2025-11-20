@@ -16,7 +16,6 @@ import (
 
 type ITU_databaseServer struct {
 	proto.UnimplementedITUDatabaseServer
-	messages      []string
 	replicaClient proto.ITUDatabaseClient
 	messages []string
 	auction Auction
@@ -31,10 +30,6 @@ type Auction struct {
 
 }
 
-func (s *ITU_databaseServer) GetMessages(ctx context.Context, in *proto.Empty) (*proto.Message, error) {
-	return &proto.Message{Message: s.messages}, nil
-}
-
 func main() {
 	ID, _ := strconv.ParseInt(os.Args[1], 10, 32)
 
@@ -44,13 +39,16 @@ func main() {
 		mainServerClient = connectReplica()
 	}
 
-	server := &ITU_databaseServer{replicaClient: mainServerClient}
-	var auction = Auction{
-} 
+
+	
 
 	// every time server gets a new bid, increment logical clock and update replica server
 	// physical time needs to be transfered to replica at certain pysical time intervals, alongside a logical timestamp update
-	server := &ITU_databaseServer{messages: []string{}}
+	server := &ITU_databaseServer{
+		messages: []string{},
+		auction: Auction{},
+		replicaClient: mainServerClient}
+	
 	server.start_server(int32(ID))
 }
 
