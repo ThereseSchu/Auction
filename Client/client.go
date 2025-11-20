@@ -2,6 +2,7 @@ package main
 
 import (
 	proto "ITUserver/grpc"
+	"bufio"
 	"context"
 	"fmt"
 	"log"
@@ -48,16 +49,19 @@ func main() {
 			continue
 		}
 
-		//log.Printf("Successfully got messages from %s", port)
-		//_ = messages
+		var username = createUser()
 
-		if os.Args[0] == "Bid" {
-			bid() ???
+		for {
+			if os.Args[0] == "Bid" {
+				bid()
+			} else if os.Args[0] == "Status" {
+
+			} else {
+
+			}
 		}
 	}
 }
-
-
 
 func switchID(id int) int {
 	if id == 1 {
@@ -67,5 +71,22 @@ func switchID(id int) int {
 }
 
 func bid() {
+	// Bid
 
+	// Wait for acknowledgement	z
+}
+
+func status() {
+	// if auction not finished send status
+
+	// if auction finished send result
+}
+
+func createUser() string {
+	fmt.Println("Enter Username: ")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	username := scanner.Text()
+
+	return username
 }
