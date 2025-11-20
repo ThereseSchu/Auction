@@ -7,12 +7,18 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+type Client struct {
+	username  string
+	timestamp int64
+}
 
 func main() {
 	// pseudo-code
@@ -41,6 +47,7 @@ func main() {
 		}
 
 		client := proto.NewITUDatabaseClient(conn)
+
 		_, err = client.GetMessages(context.Background(), &proto.Empty{})
 		if err != nil {
 			log.Printf("Failed to GetMessages from %s: %v", port, err)
@@ -52,7 +59,7 @@ func main() {
 		var username = createUser()
 
 		for {
-			handleUserInput(username)
+			handleUserInput(username, client)
 		}
 	}
 }
@@ -64,30 +71,46 @@ func switchID(id int) int {
 	return 1
 }
 
-func handleUserInput(username string) {
+func handleUserInput(username string, client proto.ITUDatabaseClient) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		var input = strings.Split(scanner.Text(), " ")
 		if input[0] == "Bid" {
-			bid(username, input[1])
+			bidamount, _ := strconv.ParseInt(input[1], 6, 12)
+			bid(username, bidamount, client)
 		} else if input[0] == "Status" {
-			status(username)
+			status(username, client)
 		} else {
 			log.Printf("Unknown command: %s", os.Args[0])
 		}
 	}
 }
 
-func bid(username string, amount string) {
+func bid(username string, amount int64, tick int64, client proto.ITUDatabaseClient) {
 	// Bid
-
+	_, err := client.PlaceBid(context.Background(), &proto.Bid{
+		Id:        username,
+		Bid:       amount,
+		Timestamp: tick,
+	})
+	if err != nil {
+		return
+	}
 	// Wait for acknowledgement	z
 }
 
-func status(username string) {
-	// if auction not finished send status
+func status(username string, client proto.ITUDatabaseClient) {
+	_, err := client.PrintStatus(context.Background(), &proto.Result{
+		IdFromHighestBidder:
+		HighestBid:
+		AuctionIsOngoing:
+		TimeLeft:
+	})
+	if err != nil {
+		return
+	}
 
-	// if auction finished send result
+
 }
 
 func createUser() string {

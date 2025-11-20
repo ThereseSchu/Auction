@@ -2,9 +2,9 @@ syntax = "proto3";
 option go_package = "ITUDataBase/grpc/proto";
 
 message Bid { //Bid tager et ID, et bud, en seq et slambert timestamp
-  int32 id = 1;
-  int32 bid = 2;
-  int32 timestamp = 4;
+  string id = 1;
+  int64 bid = 2;
+  int64 timestamp = 3;
 }
 
 message Ack {
@@ -12,10 +12,10 @@ message Ack {
 }
 
 message Result {
-  int32 idFromHighestBidder = 1;
-  int32 highestBid = 2;
+  int64 idFromHighestBidder = 1;
+  int64 highestBid = 2;
   bool auctionIsOngoing = 3;
-  int32 timeLeft = 4; //Kan fjernes hvis kritisk - T J
+  int64 timeLeft = 4; //Kan fjernes hvis kritisk - T J
 }
 
 message Bidder {
