@@ -16,8 +16,8 @@ import (
 
 type ITU_databaseServer struct {
 	proto.UnimplementedITUDatabaseServer
-	messages         []string
-	mainServerClient proto.ITUDatabaseClient
+	messages      []string
+	replicaClient proto.ITUDatabaseClient
 }
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 		mainServerClient = connectReplica()
 	}
 
-	server := &ITU_databaseServer{mainServerClient: mainServerClient}
+	server := &ITU_databaseServer{replicaClient: mainServerClient}
 	server.start_server(int32(ID))
 }
 
@@ -69,13 +69,31 @@ func connectReplica() proto.ITUDatabaseClient {
 }
 
 func (s *ITU_databaseServer) PlaceBid(ctx context.Context, in *proto.Bid) (*proto.Ack, error) {
+
+	if s.replicaClient != nil {
+		// example of how to send to other server
+		s.replicaClient.TestConnection(ctx, &proto.Empty{})
+	}
+
 	return &proto.Ack{}, nil
 }
 
 func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
+
+	if s.replicaClient != nil {
+		// example of how to send to other server
+		s.replicaClient.TestConnection(ctx, &proto.Empty{})
+	}
+
 	return &proto.Result{}, nil
 }
 
 func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
+
+	if s.replicaClient != nil {
+		// example of how to send to other server
+		s.replicaClient.TestConnection(ctx, &proto.Empty{})
+	}
+
 	return &proto.Empty{}, nil
 }
