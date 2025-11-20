@@ -17,9 +17,6 @@ type ITU_databaseServer struct {
 	messages []string
 }
 
-type ActiveBidders struct {
-}
-
 func (s *ITU_databaseServer) GetMessages(ctx context.Context, in *proto.Empty) (*proto.Message, error) {
 	return &proto.Message{Message: s.messages}, nil
 }
@@ -50,10 +47,6 @@ func (s *ITU_databaseServer) start_server(ID int32) {
 	proto.RegisterITUDatabaseServer(grpcserver, s)
 
 	err = grpcserver.Serve(listener)
-}
-
-func (s *ITU_databaseServer) updateSecondary(ctx context.Context, in *proto.Message) (*proto.Message, error) {
-
 }
 
 func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Empty) (*proto.Bid, error) {

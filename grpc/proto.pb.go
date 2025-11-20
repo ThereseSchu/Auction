@@ -23,9 +23,9 @@ const (
 
 type Bid struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Bid           int32                  `protobuf:"varint,2,opt,name=bid,proto3" json:"bid,omitempty"`
-	Timestamp     int32                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Bid           int64                  `protobuf:"varint,2,opt,name=bid,proto3" json:"bid,omitempty"`
+	Timestamp     int64                  `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -60,21 +60,21 @@ func (*Bid) Descriptor() ([]byte, []int) {
 	return file_proto_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Bid) GetId() int32 {
+func (x *Bid) GetId() string {
 	if x != nil {
 		return x.Id
 	}
-	return 0
+	return ""
 }
 
-func (x *Bid) GetBid() int32 {
+func (x *Bid) GetBid() int64 {
 	if x != nil {
 		return x.Bid
 	}
 	return 0
 }
 
-func (x *Bid) GetTimestamp() int32 {
+func (x *Bid) GetTimestamp() int64 {
 	if x != nil {
 		return x.Timestamp
 	}
@@ -287,9 +287,9 @@ const file_proto_proto_rawDesc = "" +
 	"\n" +
 	"\vproto.proto\"E\n" +
 	"\x03Bid\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x10\n" +
-	"\x03bid\x18\x02 \x01(\x05R\x03bid\x12\x1c\n" +
-	"\ttimestamp\x18\x04 \x01(\x05R\ttimestamp\"#\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
+	"\x03bid\x18\x02 \x01(\x03R\x03bid\x12\x1c\n" +
+	"\ttimestamp\x18\x04 \x01(\x03R\ttimestamp\"#\n" +
 	"\x03Ack\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x05R\ttimestamp\"\xa2\x01\n" +
 	"\x06Result\x120\n" +

@@ -7,11 +7,18 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+type Client struct {
+	username string
+	clock    *Clock
+}
 
 func main() {
 	// pseudo-code
@@ -38,11 +45,10 @@ func main() {
 
 			continue
 		}
-	
-		var clock = NewClock()
-		client := proto.NewITUDatabaseClient(conn)
-		messages, err := client.GetMessages(context.Background(), &proto.Empty{})
 
+		client := proto.NewITUDatabaseClient(conn)
+
+		_, err = client.GetMessages(context.Background(), &proto.Empty{})
 		if err != nil {
 			log.Printf("Failed to GetMessages from %s: %v", port, err)
 			currentID = switchID(currentID)
@@ -50,16 +56,13 @@ func main() {
 			continue
 		}
 
-		var username = createUser()
+		var clientstruct = new(Client)
+		clientstruct.clock = NewClock()
+
+		clientstruct.username = createUser()
 
 		for {
-			if os.Args[0] == "Bid" {
-				bid()
-			} else if os.Args[0] == "Status" {
-
-			} else {
-
-			}
+			handleUserInput(clientstruct, client)
 		}
 	}
 }
@@ -79,10 +82,41 @@ func bid() {
 	//clock.Increment()
 }
 
-func status() {
-	// if auction not finished send status
+func handleUserInput(clientstruct *Client, client proto.ITUDatabaseClient) {
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		var input = strings.Split(scanner.Text(), " ")
+		if input[0] == "Bid" {
+			bidamount, _ := strconv.ParseInt(input[1], 6, 12)
+			bid(clientstruct, bidamount, client)
+		} else if input[0] == "Status" {
+			status(clientstruct, client)
+		} else {
+			log.Printf("Unknown command: %s", os.Args[0])
+		}
+	}
+}
 
-	// if auction finished send result
+func bid(clientstruct *Client, amount int64, client proto.ITUDatabaseClient) {
+	// Bid
+	_, err := client.PlaceBid(context.Background(), &proto.Bid{
+		Id:        clientstruct.username,
+		Bid:       amount,
+		Timestamp: int64(clientstruct.clock.GetTime()),
+	})
+	if err != nil {
+		return
+	}
+	clientstruct.clock.Increment()
+}
+
+func status(clientstruct *Client, client proto.ITUDatabaseClient) {
+	result, err := client.PrintStatus(context.Background(), &proto.Empty{})
+	log.Println(result)
+	if err != nil {
+		return
+	}
+	clientstruct.clock.Increment()
 }
 
 func createUser() string {

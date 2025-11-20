@@ -31,6 +31,7 @@ type ITUDatabaseClient interface {
 	PlaceBid(ctx context.Context, in *Bid, opts ...grpc.CallOption) (*Ack, error)
 	PrintStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Result, error)
 	AddBidder(ctx context.Context, in *Bidder, opts ...grpc.CallOption) (*Empty, error)
+	GetMessages(background context.Context, p *Empty) (interface{}, error)
 }
 
 type iTUDatabaseClient struct {
