@@ -4,10 +4,12 @@ import (
 	proto "ITUserver/grpc"
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"log"
-	"time"
 )
 
 func main() {
@@ -32,6 +34,7 @@ func main() {
 			log.Printf("Failed to create client for %s: %v", port, err)
 			currentID = switchID(currentID)
 			time.Sleep(5 * time.Second)
+
 			continue
 		}
 
@@ -45,16 +48,24 @@ func main() {
 			continue
 		}
 
-		log.Printf("Successfully got messages from %s", port)
-		_ = messages
+		//log.Printf("Successfully got messages from %s", port)
+		//_ = messages
 
-		time.Sleep(10 * time.Second)
+		if os.Args[0] == "Bid" {
+			bid() ???
+		}
 	}
 }
+
+
 
 func switchID(id int) int {
 	if id == 1 {
 		return 2
 	}
 	return 1
+}
+
+func bid() {
+
 }
