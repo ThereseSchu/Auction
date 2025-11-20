@@ -17,8 +17,8 @@ type ITU_databaseServer struct {
 	messages []string
 }
 
-func (s *ITU_databaseServer) GetMessages(ctx context.Context, in *proto.Empty) (*proto.Message, error) {
-	return &proto.Message{Message: s.messages}, nil
+func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
+	return &proto.Empty{}, nil
 }
 
 func main() {

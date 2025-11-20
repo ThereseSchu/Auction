@@ -26,6 +26,7 @@ message Bidder {
 message Empty{}
 
  service ITUDatabase {
+  rpc TestConnection (Empty) returns (Empty) {};
   rpc PlaceBid (Bid) returns (Ack) {};
   rpc PrintStatus (Empty) returns (Result) {};
   rpc AddBidder (Bidder) returns (Empty) {};
