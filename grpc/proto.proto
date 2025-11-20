@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "ITUDataBase/grpc/proto";
+option go_package = "ITUserver/grpc";
 
 message Bid { //Bid tager et ID, et bud, en seq et slambert timestamp
   string id = 1;
@@ -26,6 +26,7 @@ message Bidder {
 message Empty{}
 
  service ITUDatabase {
+  rpc TestConnection (Empty) returns (Empty) {};
   rpc PlaceBid (Bid) returns (Ack) {};
   rpc PrintStatus (Empty) returns (Result) {};
   rpc AddBidder (Bidder) returns (Empty) {};
