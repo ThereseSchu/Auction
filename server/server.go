@@ -49,10 +49,6 @@ func (s *ITU_databaseServer) start_server(ID int32) {
 	err = grpcserver.Serve(listener)
 }
 
-func (s *ITU_databaseServer) updateSecondary(ctx context.Context, in *proto.Message) (*proto.Message, error) {
-
-}
-
 func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Empty) (*proto.Bid, error) {
 
 }

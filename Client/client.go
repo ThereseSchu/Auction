@@ -56,10 +56,12 @@ func main() {
 			continue
 		}
 
-		var username = createUser()
+		var clientstruct = new(Client)
+
+		clientstruct.username = createUser()
 
 		for {
-			handleUserInput(username, client)
+			handleUserInput(clientstruct, client)
 		}
 	}
 }
@@ -71,27 +73,27 @@ func switchID(id int) int {
 	return 1
 }
 
-func handleUserInput(username string, client proto.ITUDatabaseClient) {
+func handleUserInput(clientstruct *Client, client proto.ITUDatabaseClient) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		var input = strings.Split(scanner.Text(), " ")
 		if input[0] == "Bid" {
 			bidamount, _ := strconv.ParseInt(input[1], 6, 12)
-			bid(username, bidamount, client)
+			bid(clientstruct, bidamount, client)
 		} else if input[0] == "Status" {
-			status(username, client)
+			status(clientstruct, client)
 		} else {
 			log.Printf("Unknown command: %s", os.Args[0])
 		}
 	}
 }
 
-func bid(username string, amount int64, tick int64, client proto.ITUDatabaseClient) {
+func bid(clientstruct *Client, amount int64, client proto.ITUDatabaseClient) {
 	// Bid
 	_, err := client.PlaceBid(context.Background(), &proto.Bid{
-		Id:        username,
+		Id:        clientstruct.username,
 		Bid:       amount,
-		Timestamp: tick,
+		Timestamp: clientstruct.timestamp,
 	})
 	if err != nil {
 		return
@@ -99,18 +101,12 @@ func bid(username string, amount int64, tick int64, client proto.ITUDatabaseClie
 	// Wait for acknowledgement	z
 }
 
-func status(username string, client proto.ITUDatabaseClient) {
-	_, err := client.PrintStatus(context.Background(), &proto.Result{
-		IdFromHighestBidder:
-		HighestBid:
-		AuctionIsOngoing:
-		TimeLeft:
-	})
+func status(clientstruct *Client, client proto.ITUDatabaseClient) {
+	result, err := client.PrintStatus(context.Background(), &proto.Empty{})
+	log.Println(result)
 	if err != nil {
 		return
 	}
-
-
 }
 
 func createUser() string {
