@@ -74,6 +74,14 @@ func switchID(id int) int {
 	return 1
 }
 
+func bid() {
+	// Bid
+
+	// Wait for acknowledgement	z
+
+	//clock.Increment()
+}
+
 func handleUserInput(clientstruct *Client, client proto.ITUDatabaseClient) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
