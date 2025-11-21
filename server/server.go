@@ -52,7 +52,7 @@ func (s *ITU_databaseServer) placeBid(ctx context.Context, bid *proto.Bid) {
 	var bidAmount = bid.Bid
 
 	if s.auction.highestBid == 0 {
-		s.startAuction(id, timestamp, bidAmount)
+		s.startAuction(id, timestamp, bidAmount, ctx)
 		log.Println("Auction startet")
 	}
 }
@@ -103,31 +103,34 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, in *proto.Bid) (*prot
 
 func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
 
-	if s.replicaClient != nil {
-		doBackup(ctx, s)
-	}
-
 	return &proto.Result{}, nil
 }
 
 func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
 
-	if s.replicaClient != nil {
-		doBackup(ctx, s)
-	}
-
 	return &proto.Empty{}, nil
 }
 
 func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (*proto.Bid, error) {
+	// this needs a mutex lock, to prevent multiple clients writing to the server at the same time
 
-	// server recieved backup here, returns bid.
-	// but only message part of bid should be used
+	s.auction.ongoing = in.Ongoing
+	s.auction.highestBid = in.HigestBid
+	s.auction.timestamp = in.Timestamp
+	s.auction.highestBidder = in.HighestBidder
+	s.auction.endTime = in.EndTime
 
-	return &proto.Bid{}, nil
+	return &proto.Bid{
+		Id: "Backup reached replicaDB and returned successfully!",
+	}, nil
 }
 
-func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64) {
+func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64, ctx context.Context) {
+
+	if s.replicaClient != nil {
+		doBackup(ctx, s)
+	}
+
 	s.auction = Auction{
 		ongoing:       true,
 		highestBid:    bidAmount,
