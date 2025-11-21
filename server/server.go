@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -113,12 +114,15 @@ func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty
 
 func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (*proto.Bid, error) {
 	// this needs a mutex lock, to prevent multiple clients writing to the server at the same time
+	mu := &sync.Mutex{}
 
+	mu.Lock()
 	s.auction.ongoing = in.Ongoing
 	s.auction.highestBid = in.HigestBid
 	s.auction.timestamp = in.Timestamp
 	s.auction.highestBidder = in.HighestBidder
 	s.auction.endTime = in.EndTime
+	mu.Unlock()
 
 	return &proto.Bid{
 		Id: "Backup reached replicaDB and returned successfully!",
