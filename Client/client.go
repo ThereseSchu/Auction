@@ -49,6 +49,7 @@ func main() {
 		client := proto.NewITUDatabaseClient(conn)
 
 		_, err = client.TestConnection(context.Background(), &proto.Empty{})
+		
 		if err != nil {
 			log.Printf("Failed to GetMessages from %s: %v", port, err)
 			currentID = switchID(currentID)
@@ -73,7 +74,6 @@ func switchID(id int) int {
 	}
 	return 1
 }
-
 
 func handleUserInput(clientstruct *Client, client proto.ITUDatabaseClient) {
 	scanner := bufio.NewScanner(os.Stdin)

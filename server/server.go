@@ -9,7 +9,8 @@ import (
 	"os"
 	"strconv"
 	"time"
-
+	"sync"
+	
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -19,7 +20,8 @@ type ITU_databaseServer struct {
 	replicaClient proto.ITUDatabaseClient
 	messages      []string
 	auction       Auction
-	globalTick    int
+	mu            sync.Mutex
+	globalTick    int64
 }
 
 type Auction struct {
@@ -46,42 +48,59 @@ func main() {
 		auction:       Auction{},
 		replicaClient: mainServerClient}
 
-	server.start_server(int32(ID))
+	server.start_server(ID)
 }
 
 func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*proto.Ack, error) {
-	var id = bid.Id
-	var timestamp = bid.Timestamp
-	var bidAmount = bid.Bid
+    s.mu.Lock()
+    defer s.mu.Unlock()
 
-	if int(bid.Timestamp) > s.globalTick {
-		s.globalTick = int(bid.Timestamp)
-	}
-	s.globalTick++
+    id := bid.Id
+    timestamp := bid.Timestamp
+    bidAmount := bid.Bid
 
-	if int64(s.globalTick) > s.auction.endTime {
-		s.auction.ongoing = false
-		log.Println("Auctionen er forbi brormand ):")
-		return &proto.Ack{
-			Status:    proto.BidStatus_fail,
-			Timestamp: int32(s.globalTick),
-		}, nil
-	}
+    if timestamp > s.globalTick {
+        s.globalTick = timestamp
+    }
+    s.globalTick++
 
-	if s.auction.highestBid == 0 {
-		s.startAuction(id, timestamp, bidAmount)
-		log.Println("Auction startet")
-	} else if s.auction.highestBid >= bid.Bid {
-		log.Println("Du er for fattig Silas, prøv noget højere")
-	} else if s.auction.timestamp == s.auction.endTime {
-		log.Println("Auctionen er forbi brormand ):")
-	} else {
-		s.updateAuction(id, timestamp, bid.Bid)
-	}
+    if s.auction.highestBid == 0 {
+        s.startAuction(id, timestamp, bidAmount)
+        log.Println("Auction started")
+        return &proto.Ack{
+            Status:    proto.BidStatus_SUCCESS,
+            Timestamp: int64(s.globalTick),
+        }, nil
+    }
 
+    if s.auction.endTime != 0 && s.globalTick > s.auction.endTime {
+        s.auction.ongoing = false
+        log.Println("Auctionen er forbi brormand ):")
+        return &proto.Ack{
+            Status:    proto.BidStatus_FAIL,
+            Timestamp: int64(s.globalTick),
+        }, nil
+    }
+
+    if s.auction.highestBid >= bidAmount {
+        log.Println("Du er for fattig Silas, prøv noget højere")
+        return &proto.Ack{
+            Status:    proto.BidStatus_FAIL,
+            Timestamp: int64(s.globalTick),
+        }, nil
+    } 
+
+	s.updateAuction(id, timestamp, bidAmount)
+
+return &proto.Ack{
+    Status:    proto.BidStatus_SUCCESS,
+    Timestamp: int64(s.globalTick),
+}, nil
 }
 
-func (s *ITU_databaseServer) start_server(ID int32) {
+
+
+func (s *ITU_databaseServer) start_server(ID int64) {
 	port := fmt.Sprintf(":800%d", ID)
 
 	grpcserver := grpc.NewServer()
