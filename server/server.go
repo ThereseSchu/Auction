@@ -77,7 +77,7 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*pro
         s.auction.ongoing = false
         log.Println("Auctionen er forbi brormand ):")
         return &proto.Ack{
-            Status:    proto.BidStatus_FAIL,
+            Status:    proto.BidStatus_EXCEPTION,
             Timestamp: int64(s.globalTick),
         }, nil
     }
@@ -171,5 +171,6 @@ func (s *ITU_databaseServer) updateAuction(name string, timestamp int64, bidAmou
 		highestBidder: name,
 	}
 }
+
 
 //
