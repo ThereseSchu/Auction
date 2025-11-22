@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -20,6 +19,7 @@ type ITU_databaseServer struct {
 	replicaClient proto.ITUDatabaseClient
 	messages      []string
 	auction       Auction
+	globalTick    int
 }
 
 type Auction struct {
@@ -39,6 +39,8 @@ func main() {
 		mainServerClient = connectReplica()
 	}
 
+	// every time server gets a new bid, increment logical clock and update replica server
+	// physical time needs to be transfered to replica at certain pysical time intervals, alongside a logical timestamp update
 	server := &ITU_databaseServer{
 		messages:      []string{},
 		auction:       Auction{},
@@ -47,15 +49,36 @@ func main() {
 	server.start_server(int32(ID))
 }
 
-func (s *ITU_databaseServer) placeBid(ctx context.Context, bid *proto.Bid) {
+func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*proto.Ack, error) {
 	var id = bid.Id
 	var timestamp = bid.Timestamp
 	var bidAmount = bid.Bid
 
-	if s.auction.highestBid == 0 {
-		s.startAuction(id, timestamp, bidAmount, ctx)
-		log.Println("Auction startet")
+	if int(bid.Timestamp) > s.globalTick {
+		s.globalTick = int(bid.Timestamp)
 	}
+	s.globalTick++
+
+	if int64(s.globalTick) > s.auction.endTime {
+		s.auction.ongoing = false
+		log.Println("Auctionen er forbi brormand ):")
+		return &proto.Ack{
+			Status:    proto.BidStatus_fail,
+			Timestamp: int32(s.globalTick),
+		}, nil
+	}
+
+	if s.auction.highestBid == 0 {
+		s.startAuction(id, timestamp, bidAmount)
+		log.Println("Auction startet")
+	} else if s.auction.highestBid >= bid.Bid {
+		log.Println("Du er for fattig Silas, prøv noget højere")
+	} else if s.auction.timestamp == s.auction.endTime {
+		log.Println("Auctionen er forbi brormand ):")
+	} else {
+		s.updateAuction(id, timestamp, bid.Bid)
+	}
+
 }
 
 func (s *ITU_databaseServer) start_server(ID int32) {
@@ -93,48 +116,26 @@ func connectReplica() proto.ITUDatabaseClient {
 	}
 }
 
-func (s *ITU_databaseServer) PlaceBid(ctx context.Context, in *proto.Bid) (*proto.Ack, error) {
+func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
 
 	if s.replicaClient != nil {
-		doBackup(ctx, s)
+		// example of how to send to other server
+		s.replicaClient.TestConnection(ctx, &proto.Empty{})
 	}
-
-	return &proto.Ack{}, nil
-}
-
-func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
 
 	return &proto.Result{}, nil
 }
 
 func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
 
-	return &proto.Empty{}, nil
-}
-
-func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (*proto.Bid, error) {
-	// this needs a mutex lock, to prevent multiple clients writing to the server at the same time
-	mu := &sync.Mutex{}
-
-	mu.Lock()
-	s.auction.ongoing = in.Ongoing
-	s.auction.highestBid = in.HigestBid
-	s.auction.timestamp = in.Timestamp
-	s.auction.highestBidder = in.HighestBidder
-	s.auction.endTime = in.EndTime
-	mu.Unlock()
-
-	return &proto.Bid{
-		Id: "Backup reached replicaDB and returned successfully!",
-	}, nil
-}
-
-func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64, ctx context.Context) {
-
 	if s.replicaClient != nil {
-		doBackup(ctx, s)
+		// example of how to send to other server
+		s.replicaClient.TestConnection(ctx, &proto.Empty{})
 	}
 
+	return &proto.Empty{}, nil
+}
+func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64) {
 	s.auction = Auction{
 		ongoing:       true,
 		highestBid:    bidAmount,
@@ -144,12 +145,12 @@ func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmoun
 	}
 }
 
-func doBackup(ctx context.Context, s *ITU_databaseServer) {
-	s.replicaClient.SendBackup(ctx, &proto.Backup{
-		Ongoing:       s.auction.ongoing,
-		HigestBid:     s.auction.highestBid,
-		Timestamp:     s.auction.timestamp,
-		HighestBidder: s.auction.highestBidder,
-		EndTime:       s.auction.endTime,
-	})
+func (s *ITU_databaseServer) updateAuction(name string, timestamp int64, bidAmount int64) {
+	s.auction = Auction{
+		highestBid:    bidAmount,
+		timestamp:     timestamp,
+		highestBidder: name,
+	}
 }
+
+//
