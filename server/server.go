@@ -66,11 +66,9 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*pro
 
     if s.auction.highestBid == 0 {
         s.startAuction(id, timestamp, bidAmount)
-        log.Println("Auction started")
-        return &proto.Ack{
-            Status:    proto.BidStatus_SUCCESS,
-            Timestamp: int64(s.globalTick),
-        }, nil
+        log.Println("Auctionen er igang")
+    } else {
+        s.updateAuction(id, timestamp, bidAmount)
     }
 
     if s.auction.endTime != 0 && s.globalTick > s.auction.endTime {
@@ -91,13 +89,16 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*pro
     } 
 
 	s.updateAuction(id, timestamp, bidAmount)
+	
+	if s.replicaClient != nil {
+		doBackup(ctx, s)
+	}
 
 return &proto.Ack{
     Status:    proto.BidStatus_SUCCESS,
     Timestamp: int64(s.globalTick),
 }, nil
 }
-
 
 
 func (s *ITU_databaseServer) start_server(ID int64) {
@@ -147,13 +148,45 @@ func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (
 
 func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
 
-	if s.replicaClient != nil {
-		// example of how to send to other server
-		s.replicaClient.TestConnection(ctx, &proto.Empty{})
-	}
-
 	return &proto.Empty{}, nil
 }
+
+func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (*proto.Bid, error) {
+	// this needs a mutex lock, to prevent multiple clients writing to the server at the same time
+	mu := &sync.Mutex{}
+	// this lock does not work.
+
+	mu.Lock()
+	s.auction.ongoing = in.Ongoing
+	s.auction.highestBid = in.HigestBid
+	s.auction.timestamp = in.Timestamp
+	s.auction.highestBidder = in.HighestBidder
+	s.auction.endTime = in.EndTime
+	mu.Unlock()
+
+	return &proto.Bid{
+		Id: "Backup reached replicaDB and returned successfully!",
+	}, nil
+}
+
+func doBackup(ctx context.Context, s *ITU_databaseServer) {
+    if s.replicaClient == nil {
+        return
+    }
+
+    _, err := s.replicaClient.SendBackup(ctx, &proto.Backup{
+        Ongoing:       s.auction.ongoing,
+        HigestBid:     s.auction.highestBid,
+        Timestamp:     s.auction.timestamp,
+        HighestBidder: s.auction.highestBidder,
+        EndTime:       s.auction.endTime,
+    })
+
+    if err != nil {
+        log.Printf("Backup failed: %v", err)
+    }
+}
+
 func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64) {
 	s.auction = Auction{
 		ongoing:       true,
