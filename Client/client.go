@@ -49,7 +49,7 @@ func main() {
 		client := proto.NewITUDatabaseClient(conn)
 
 		_, err = client.TestConnection(context.Background(), &proto.Empty{})
-		
+
 		if err != nil {
 			log.Printf("Failed to GetMessages from %s: %v", port, err)
 			currentID = switchID(currentID)
@@ -80,7 +80,7 @@ func handleUserInput(clientstruct *Client, client proto.ITUDatabaseClient) {
 	for scanner.Scan() {
 		var input = strings.Split(scanner.Text(), " ")
 		if input[0] == "Bid" {
-			bidamount, _ := strconv.ParseInt(input[1], 6, 12)
+			bidamount, _ := strconv.ParseInt(input[1], 10, 64)
 			bid(clientstruct, bidamount, client)
 		} else if input[0] == "Status" {
 			status(clientstruct, client)
@@ -105,10 +105,18 @@ func bid(clientstruct *Client, amount int64, client proto.ITUDatabaseClient) {
 
 func status(clientstruct *Client, client proto.ITUDatabaseClient) {
 	result, err := client.PrintStatus(context.Background(), &proto.Empty{})
-	log.Println(result)
 	if err != nil {
+		log.Println("Failed to get auction status:", err)
 		return
 	}
+
+	if !result.AuctionIsOngoing {
+		fmt.Println("Der er ingen igangværende auktion lige nu.")
+	} else {
+		fmt.Printf("Højeste bud: %d fra bidder: %s, tid tilbage: %d\n",
+			result.HighestBid, result.HighestBidder, result.TimeLeft)
+	}
+
 	clientstruct.clock.Increment()
 }
 

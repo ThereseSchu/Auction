@@ -8,9 +8,9 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"time"
 	"sync"
-	
+	"time"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -52,54 +52,60 @@ func main() {
 }
 
 func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*proto.Ack, error) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-    id := bid.Id
-    timestamp := bid.Timestamp
-    bidAmount := bid.Bid
+	id := bid.Id
+	timestamp := bid.Timestamp
+	bidAmount := bid.Bid
 
-    if timestamp > s.globalTick {
-        s.globalTick = timestamp
-    }
-    s.globalTick++
+	if timestamp > s.globalTick {
+		s.globalTick = timestamp
+	}
+	s.globalTick++
 
-    if s.auction.highestBid == 0 {
-        s.startAuction(id, timestamp, bidAmount)
-        log.Println("Auctionen er igang")
-    } else {
-        s.updateAuction(id, timestamp, bidAmount)
-    }
+	if s.auction.highestBid == 0 {
+    s.startAuction(id, timestamp, bidAmount)
+    log.Printf("Auctionen er sat igang med et beløb på %d", bidAmount)
+    return &proto.Ack{
+        Status:    proto.BidStatus_SUCCESS,
+        Timestamp: s.globalTick,
+    }, nil
+}
 
-    if s.auction.endTime != 0 && s.globalTick > s.auction.endTime {
-        s.auction.ongoing = false
-        log.Println("Auctionen er forbi brormand ):")
-        return &proto.Ack{
-            Status:    proto.BidStatus_EXCEPTION,
-            Timestamp: int64(s.globalTick),
-        }, nil
-    }
+if s.auction.endTime != 0 && s.globalTick > s.auction.endTime {
+		s.auction.ongoing = false
+		log.Println("Auctionen er forbi brormand ):")
+		return &proto.Ack{
+			Status:    proto.BidStatus_EXCEPTION,
+			Timestamp: int64(s.globalTick),
+		}, nil
+	}
 
-    if s.auction.highestBid >= bidAmount {
-        log.Println("Du er for fattig Silas, prøv noget højere")
-        return &proto.Ack{
-            Status:    proto.BidStatus_FAIL,
-            Timestamp: int64(s.globalTick),
-        }, nil
-    } 
+if s.auction.highestBid >= bidAmount {
+    log.Printf(
+        "Du er for fattig Silas, Auctionen er på %d, du bød %d, prøv noget højere!",
+        s.auction.highestBid,
+        bidAmount,
+    )
+    return &proto.Ack{
+        Status:    proto.BidStatus_FAIL,
+        Timestamp: s.globalTick,
+    }, nil
+	}
 
-	s.updateAuction(id, timestamp, bidAmount)
-	
+
 	if s.replicaClient != nil {
 		doBackup(ctx, s)
 	}
 
-return &proto.Ack{
-    Status:    proto.BidStatus_SUCCESS,
-    Timestamp: int64(s.globalTick),
-}, nil
+	s.updateAuction(id, timestamp, bidAmount)
+	log.Printf("Ny højeste bud: %d af %s", bidAmount, id)
+	return &proto.Ack{
+		Status:    proto.BidStatus_SUCCESS,
+		Timestamp: int64(s.globalTick),
+	}, nil
 }
-
 
 func (s *ITU_databaseServer) start_server(ID int64) {
 	port := fmt.Sprintf(":800%d", ID)
@@ -137,13 +143,20 @@ func connectReplica() proto.ITUDatabaseClient {
 }
 
 func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
 
-	if s.replicaClient != nil {
-		// example of how to send to other server
-		s.replicaClient.TestConnection(ctx, &proto.Empty{})
-	}
+    timeLeft := int64(0)
+    if s.auction.ongoing && s.auction.endTime > s.globalTick {
+        timeLeft = s.auction.endTime - s.globalTick
+    }
 
-	return &proto.Result{}, nil
+    return &proto.Result{
+        HighestBidder: s.auction.highestBidder,
+        HighestBid:          s.auction.highestBid,
+        AuctionIsOngoing:    s.auction.ongoing,
+        TimeLeft:            timeLeft,
+    }, nil
 }
 
 func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
@@ -170,21 +183,21 @@ func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (
 }
 
 func doBackup(ctx context.Context, s *ITU_databaseServer) {
-    if s.replicaClient == nil {
-        return
-    }
+	if s.replicaClient == nil {
+		return
+	}
 
-    _, err := s.replicaClient.SendBackup(ctx, &proto.Backup{
-        Ongoing:       s.auction.ongoing,
-        HigestBid:     s.auction.highestBid,
-        Timestamp:     s.auction.timestamp,
-        HighestBidder: s.auction.highestBidder,
-        EndTime:       s.auction.endTime,
-    })
+	_, err := s.replicaClient.SendBackup(ctx, &proto.Backup{
+		Ongoing:       s.auction.ongoing,
+		HigestBid:     s.auction.highestBid,
+		Timestamp:     s.auction.timestamp,
+		HighestBidder: s.auction.highestBidder,
+		EndTime:       s.auction.endTime,
+	})
 
-    if err != nil {
-        log.Printf("Backup failed: %v", err)
-    }
+	if err != nil {
+		log.Printf("Backup failed: %v", err)
+	}
 }
 
 func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64) {
@@ -204,6 +217,5 @@ func (s *ITU_databaseServer) updateAuction(name string, timestamp int64, bidAmou
 		highestBidder: name,
 	}
 }
-
 
 //

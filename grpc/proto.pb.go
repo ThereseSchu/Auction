@@ -183,13 +183,13 @@ func (x *Ack) GetTimestamp() int64 {
 }
 
 type Result struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	IdFromHighestBidder int64                  `protobuf:"varint,1,opt,name=idFromHighestBidder,proto3" json:"idFromHighestBidder,omitempty"`
-	HighestBid          int64                  `protobuf:"varint,2,opt,name=highestBid,proto3" json:"highestBid,omitempty"`
-	AuctionIsOngoing    bool                   `protobuf:"varint,3,opt,name=auctionIsOngoing,proto3" json:"auctionIsOngoing,omitempty"`
-	TimeLeft            int64                  `protobuf:"varint,4,opt,name=timeLeft,proto3" json:"timeLeft,omitempty"` //Kan fjernes hvis kritisk - T J
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	HighestBidder    string                 `protobuf:"bytes,1,opt,name=highestBidder,proto3" json:"highestBidder,omitempty"`
+	HighestBid       int64                  `protobuf:"varint,2,opt,name=highestBid,proto3" json:"highestBid,omitempty"`
+	AuctionIsOngoing bool                   `protobuf:"varint,3,opt,name=auctionIsOngoing,proto3" json:"auctionIsOngoing,omitempty"`
+	TimeLeft         int64                  `protobuf:"varint,4,opt,name=timeLeft,proto3" json:"timeLeft,omitempty"` //Kan fjernes hvis kritisk - T J
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Result) Reset() {
@@ -222,11 +222,11 @@ func (*Result) Descriptor() ([]byte, []int) {
 	return file_proto_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Result) GetIdFromHighestBidder() int64 {
+func (x *Result) GetHighestBidder() string {
 	if x != nil {
-		return x.IdFromHighestBidder
+		return x.HighestBidder
 	}
-	return 0
+	return ""
 }
 
 func (x *Result) GetHighestBid() int64 {
@@ -426,9 +426,9 @@ const file_proto_proto_rawDesc = "" +
 	"\x03Ack\x12\"\n" +
 	"\x06status\x18\x01 \x01(\x0e2\n" +
 	".BidStatusR\x06status\x12\x1c\n" +
-	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"\xa2\x01\n" +
-	"\x06Result\x120\n" +
-	"\x13idFromHighestBidder\x18\x01 \x01(\x03R\x13idFromHighestBidder\x12\x1e\n" +
+	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"\x96\x01\n" +
+	"\x06Result\x12$\n" +
+	"\rhighestBidder\x18\x01 \x01(\tR\rhighestBidder\x12\x1e\n" +
 	"\n" +
 	"highestBid\x18\x02 \x01(\x03R\n" +
 	"highestBid\x12*\n" +

@@ -19,7 +19,7 @@ enum BidStatus {
 }
 
 message Result {
-  int64 idFromHighestBidder = 1;
+  string highestBidder = 1;
   int64 highestBid = 2;
   bool auctionIsOngoing = 3;
   int64 timeLeft = 4; //Kan fjernes hvis kritisk - T J
