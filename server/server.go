@@ -115,6 +115,7 @@ func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty
 func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (*proto.Bid, error) {
 	// this needs a mutex lock, to prevent multiple clients writing to the server at the same time
 	mu := &sync.Mutex{}
+	// this lock does not work.
 
 	mu.Lock()
 	s.auction.ongoing = in.Ongoing
