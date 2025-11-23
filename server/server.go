@@ -65,40 +65,39 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*pro
 	s.globalTick++
 
 	if s.auction.highestBid == 0 {
-    s.startAuction(id, timestamp, bidAmount)
-    log.Printf("Auctionen er sat igang med et beløb på %d", bidAmount)
-    return &proto.Ack{
-        Status:    proto.BidStatus_SUCCESS,
-        Timestamp: s.globalTick,
-    }, nil
-}
+		s.startAuction(id, timestamp, bidAmount)
+		log.Printf("Auctionen er sat igang med et beløb på %d ---logical timer = (%d)", bidAmount, s.globalTick)
+		return &proto.Ack{
+			Status:    proto.BidStatus_SUCCESS,
+			Timestamp: s.globalTick,
+		}, nil
+	}
 
-if s.auction.endTime != 0 && s.globalTick > s.auction.endTime {
+	if s.auction.endTime != 0 && s.globalTick > s.auction.endTime {
 		s.auction.ongoing = false
-		log.Println("Auctionen er forbi brormand ):")
+		log.Printf("Auctionen er forbi brormand ---logical timer = (%d)", s.globalTick)
 		return &proto.Ack{
 			Status:    proto.BidStatus_EXCEPTION,
 			Timestamp: int64(s.globalTick),
 		}, nil
 	}
 
-if s.auction.highestBid >= bidAmount {
-    log.Printf("Du er for fattig %s, det højeste bud er %d og du bød %d — prøv noget højere!",
-    id, s.auction.highestBid, bidAmount)
+	if s.auction.highestBid >= bidAmount {
+		log.Printf("Du er for fattig %s, det højeste bud er %d og du bød %d — prøv noget højere! ---logical timer = (%d)",
+			id, s.auction.highestBid, bidAmount, s.globalTick)
 
-    return &proto.Ack{
-        Status:    proto.BidStatus_FAIL,
-        Timestamp: s.globalTick,
-    }, nil
+		return &proto.Ack{
+			Status:    proto.BidStatus_FAIL,
+			Timestamp: s.globalTick,
+		}, nil
 	}
-
 
 	if s.replicaClient != nil {
 		doBackup(ctx, s)
 	}
 
 	s.updateAuction(id, timestamp, bidAmount)
-	log.Printf("Ny højeste bud: %d af %s", bidAmount, id)
+	log.Printf("Ny højeste bud: %d af %s ---logical timer = (%d)", bidAmount, id, s.globalTick)
 	return &proto.Ack{
 		Status:    proto.BidStatus_SUCCESS,
 		Timestamp: int64(s.globalTick),
@@ -106,6 +105,8 @@ if s.auction.highestBid >= bidAmount {
 }
 
 func (s *ITU_databaseServer) start_server(ID int64) {
+	go s.startClock()
+
 	port := fmt.Sprintf(":800%d", ID)
 
 	grpcserver := grpc.NewServer()
@@ -141,20 +142,20 @@ func connectReplica() proto.ITUDatabaseClient {
 }
 
 func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-    timeLeft := int64(0)
-    if s.auction.ongoing && s.auction.endTime > s.globalTick {
-        timeLeft = s.auction.endTime - s.globalTick
-    }
+	timeLeft := int64(0)
+	if s.auction.ongoing && s.auction.endTime > s.globalTick {
+		timeLeft = s.auction.endTime - s.globalTick
+	}
 
-    return &proto.Result{
-        HighestBidder: s.auction.highestBidder,
-        HighestBid:          s.auction.highestBid,
-        AuctionIsOngoing:    s.auction.ongoing,
-        TimeLeft:            timeLeft,
-    }, nil
+	return &proto.Result{
+		HighestBidder:    s.auction.highestBidder,
+		HighestBid:       s.auction.highestBid,
+		AuctionIsOngoing: s.auction.ongoing,
+		TimeLeft:         timeLeft,
+	}, nil
 }
 
 func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
@@ -198,6 +199,21 @@ func doBackup(ctx context.Context, s *ITU_databaseServer) {
 	}
 }
 
+func (s *ITU_databaseServer) startClock() {
+	ticker := time.NewTicker(5 * time.Second)
+	for range ticker.C {
+		s.mu.Lock()
+		s.globalTick++
+
+		if s.auction.ongoing && s.globalTick > s.auction.endTime {
+			s.auction.ongoing = false
+			log.Println("Auktionen er forbi")
+		}
+
+		s.mu.Unlock()
+	}
+}
+
 func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64) {
 	s.auction = Auction{
 		ongoing:       true,
@@ -209,9 +225,9 @@ func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmoun
 }
 
 func (s *ITU_databaseServer) updateAuction(name string, timestamp int64, bidAmount int64) {
-    s.auction.highestBid = bidAmount
-    s.auction.timestamp = timestamp
-    s.auction.highestBidder = name
+	s.auction.highestBid = bidAmount
+	s.auction.timestamp = timestamp
+	s.auction.highestBidder = name
 }
 
 //
