@@ -83,11 +83,9 @@ if s.auction.endTime != 0 && s.globalTick > s.auction.endTime {
 	}
 
 if s.auction.highestBid >= bidAmount {
-    log.Printf(
-        "Du er for fattig Silas, Auctionen er på %d, du bød %d, prøv noget højere!",
-        s.auction.highestBid,
-        bidAmount,
-    )
+    log.Printf("Du er for fattig %s, det højeste bud er %d og du bød %d — prøv noget højere!",
+    id, s.auction.highestBid, bidAmount)
+	
     return &proto.Ack{
         Status:    proto.BidStatus_FAIL,
         Timestamp: s.globalTick,
