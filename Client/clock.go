@@ -3,11 +3,11 @@ package main
 import "sync"
 
 type Clock struct {
-	Value int32
+	Value int64
 	Mutex sync.Mutex
 }
 
-func (clock *Clock) UpdateClock(newValue int32) {
+func (clock *Clock) UpdateClock(newValue int64) {
 	clock.Mutex.Lock()
 	defer clock.Mutex.Unlock()
 	if clock.Value < newValue {
@@ -21,7 +21,7 @@ func (clock *Clock) Increment() {
 	clock.Value++
 }
 
-func (clock *Clock) GetTime() int32 {
+func (clock *Clock) GetTime() int64 {
 	clock.Mutex.Lock()
 	defer clock.Mutex.Unlock()
 	return clock.Value

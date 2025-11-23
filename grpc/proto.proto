@@ -8,19 +8,26 @@ message Bid { //Bid tager et ID, et bud, en seq et slambert timestamp
 }
 
 message Ack {
-  int32 timestamp = 1;
+  BidStatus status = 1;
+  int64 timestamp = 2;
+}
+
+enum BidStatus {
+  FAIL = 0;
+  SUCCESS = 1;
+  EXCEPTION = 2;
 }
 
 message Result {
-  int64 idFromHighestBidder = 1;
+  string highestBidder = 1;
   int64 highestBid = 2;
   bool auctionIsOngoing = 3;
   int64 timeLeft = 4; //Kan fjernes hvis kritisk - T J
 }
 
 message Bidder {
-  int32 id = 1;
-  int32 timestamp = 2; //Skal timestamp gives?? -T J
+  int64 id = 1;
+  int64 timestamp = 2; //Skal timestamp gives?? -T J
 }
 
 message Backup {

@@ -20,6 +20,8 @@ type ITU_databaseServer struct {
 	replicaClient proto.ITUDatabaseClient
 	messages      []string
 	auction       Auction
+	mu            sync.Mutex
+	globalTick    int64
 }
 
 type Auction struct {
@@ -39,26 +41,79 @@ func main() {
 		mainServerClient = connectReplica()
 	}
 
+	// every time server gets a new bid, increment logical clock and update replica server
+	// physical time needs to be transfered to replica at certain pysical time intervals, alongside a logical timestamp update
 	server := &ITU_databaseServer{
 		messages:      []string{},
 		auction:       Auction{},
 		replicaClient: mainServerClient}
 
-	server.start_server(int32(ID))
+	server.start_server(ID)
 }
 
-func (s *ITU_databaseServer) placeBid(ctx context.Context, bid *proto.Bid) {
-	var id = bid.Id
-	var timestamp = bid.Timestamp
-	var bidAmount = bid.Bid
+func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*proto.Ack, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	id := bid.Id
+	timestamp := bid.Timestamp
+	bidAmount := bid.Bid
+
+	if timestamp > s.globalTick {
+		s.globalTick = timestamp
+	}
+	s.globalTick++
 
 	if s.auction.highestBid == 0 {
-		s.startAuction(id, timestamp, bidAmount, ctx)
-		log.Println("Auction startet")
+		s.startAuction(id, timestamp, bidAmount)
+		log.Printf("Auctionen er sat igang med et beløb på %d ---logical timer = (%d)", bidAmount, s.globalTick)
+		return &proto.Ack{
+			Status:    proto.BidStatus_SUCCESS,
+			Timestamp: s.globalTick,
+		}, nil
 	}
+
+	if s.auction.endTime != 0 && s.globalTick > s.auction.endTime {
+		s.auction.ongoing = false
+		log.Printf("Auctionen er forbi brormand ---logical timer = (%d)", s.globalTick)
+		return &proto.Ack{
+			Status:    proto.BidStatus_EXCEPTION,
+			Timestamp: int64(s.globalTick),
+		}, nil
+	}
+
+	if s.auction.highestBid >= bidAmount {
+		log.Printf("Du er for fattig %s, det højeste bud er %d og du bød %d — prøv noget højere! ---logical timer = (%d)",
+			id, s.auction.highestBid, bidAmount, s.globalTick)
+
+		return &proto.Ack{
+			Status:    proto.BidStatus_FAIL,
+			Timestamp: s.globalTick,
+		}, nil
+	}
+
+	if s.replicaClient != nil {
+		err := s.doBackup(ctx)
+		if err != nil {
+			log.Printf("Backup failed, rejecting bid for safety.")
+			return &proto.Ack{
+				Status:    proto.BidStatus_EXCEPTION,
+				Timestamp: s.globalTick,
+			}, nil
+		}
+	}
+
+	s.updateAuction(id, timestamp, bidAmount)
+	log.Printf("Ny højeste bud: %d af %s ---logical timer = (%d)", bidAmount, id, s.globalTick)
+	return &proto.Ack{
+		Status:    proto.BidStatus_SUCCESS,
+		Timestamp: int64(s.globalTick),
+	}, nil
 }
 
-func (s *ITU_databaseServer) start_server(ID int32) {
+func (s *ITU_databaseServer) start_server(ID int64) {
+	go s.startClock()
+
 	port := fmt.Sprintf(":800%d", ID)
 
 	grpcserver := grpc.NewServer()
@@ -93,18 +148,21 @@ func connectReplica() proto.ITUDatabaseClient {
 	}
 }
 
-func (s *ITU_databaseServer) PlaceBid(ctx context.Context, in *proto.Bid) (*proto.Ack, error) {
+func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if s.replicaClient != nil {
-		doBackup(ctx, s)
+	timeLeft := int64(0)
+	if s.auction.ongoing && s.auction.endTime > s.globalTick {
+		timeLeft = s.auction.endTime - s.globalTick
 	}
 
-	return &proto.Ack{}, nil
-}
-
-func (s *ITU_databaseServer) PrintStatus(ctx context.Context, in *proto.Empty) (*proto.Result, error) {
-
-	return &proto.Result{}, nil
+	return &proto.Result{
+		HighestBidder:    s.auction.highestBidder,
+		HighestBid:       s.auction.highestBid,
+		AuctionIsOngoing: s.auction.ongoing,
+		TimeLeft:         timeLeft,
+	}, nil
 }
 
 func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty) (*proto.Empty, error) {
@@ -113,29 +171,49 @@ func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty
 }
 
 func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (*proto.Bid, error) {
-	// this needs a mutex lock, to prevent multiple clients writing to the server at the same time
-	mu := &sync.Mutex{}
-	// this lock does not work.
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	mu.Lock()
 	s.auction.ongoing = in.Ongoing
 	s.auction.highestBid = in.HigestBid
 	s.auction.timestamp = in.Timestamp
 	s.auction.highestBidder = in.HighestBidder
 	s.auction.endTime = in.EndTime
-	mu.Unlock()
 
-	return &proto.Bid{
-		Id: "Backup reached replicaDB and returned successfully!",
-	}, nil
+	return &proto.Bid{Id: "Backup updateret"}, nil
 }
 
-func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64, ctx context.Context) {
 
-	if s.replicaClient != nil {
-		doBackup(ctx, s)
+func (s *ITU_databaseServer) doBackup(ctx context.Context) error {
+	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	_, err := s.replicaClient.SendBackup(ctx2, &proto.Backup{
+		Ongoing:       s.auction.ongoing,
+		HigestBid:     s.auction.highestBid,
+		Timestamp:     s.auction.timestamp,
+		HighestBidder: s.auction.highestBidder,
+		EndTime:       s.auction.endTime,
+	})
+	return err
+}
+
+func (s *ITU_databaseServer) startClock() {
+	ticker := time.NewTicker(5 * time.Second)
+	for range ticker.C {
+		s.mu.Lock()
+		s.globalTick++
+
+		if s.auction.ongoing && s.globalTick > s.auction.endTime {
+			s.auction.ongoing = false
+			log.Println("Auktionen er forbi")
+		}
+
+		s.mu.Unlock()
 	}
+}
 
+func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmount int64) {
 	s.auction = Auction{
 		ongoing:       true,
 		highestBid:    bidAmount,
@@ -145,12 +223,10 @@ func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmoun
 	}
 }
 
-func doBackup(ctx context.Context, s *ITU_databaseServer) {
-	s.replicaClient.SendBackup(ctx, &proto.Backup{
-		Ongoing:       s.auction.ongoing,
-		HigestBid:     s.auction.highestBid,
-		Timestamp:     s.auction.timestamp,
-		HighestBidder: s.auction.highestBidder,
-		EndTime:       s.auction.endTime,
-	})
+func (s *ITU_databaseServer) updateAuction(name string, timestamp int64, bidAmount int64) {
+	s.auction.highestBid = bidAmount
+	s.auction.timestamp = timestamp
+	s.auction.highestBidder = name
 }
+
+//
