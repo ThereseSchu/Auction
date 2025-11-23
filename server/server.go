@@ -85,7 +85,7 @@ if s.auction.endTime != 0 && s.globalTick > s.auction.endTime {
 if s.auction.highestBid >= bidAmount {
     log.Printf("Du er for fattig %s, det højeste bud er %d og du bød %d — prøv noget højere!",
     id, s.auction.highestBid, bidAmount)
-	
+
     return &proto.Ack{
         Status:    proto.BidStatus_FAIL,
         Timestamp: s.globalTick,
@@ -209,11 +209,9 @@ func (s *ITU_databaseServer) startAuction(name string, timestamp int64, bidAmoun
 }
 
 func (s *ITU_databaseServer) updateAuction(name string, timestamp int64, bidAmount int64) {
-	s.auction = Auction{
-		highestBid:    bidAmount,
-		timestamp:     timestamp,
-		highestBidder: name,
-	}
+    s.auction.highestBid = bidAmount
+    s.auction.timestamp = timestamp
+    s.auction.highestBidder = name
 }
 
 //
