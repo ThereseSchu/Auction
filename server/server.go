@@ -93,7 +93,14 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*pro
 	}
 
 	if s.replicaClient != nil {
-		doBackup(ctx, s)
+		err := s.doBackup(ctx)
+		if err != nil {
+			log.Printf("Backup failed, rejecting bid for safety.")
+			return &proto.Ack{
+				Status:    proto.BidStatus_EXCEPTION,
+				Timestamp: s.globalTick,
+			}, nil
+		}
 	}
 
 	s.updateAuction(id, timestamp, bidAmount)
@@ -164,39 +171,31 @@ func (s *ITU_databaseServer) TestConnection(ctx context.Context, in *proto.Empty
 }
 
 func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (*proto.Bid, error) {
-	// this needs a mutex lock, to prevent multiple clients writing to the server at the same time
-	mu := &sync.Mutex{}
-	// this lock does not work.
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	mu.Lock()
 	s.auction.ongoing = in.Ongoing
 	s.auction.highestBid = in.HigestBid
 	s.auction.timestamp = in.Timestamp
 	s.auction.highestBidder = in.HighestBidder
 	s.auction.endTime = in.EndTime
-	mu.Unlock()
 
-	return &proto.Bid{
-		Id: "Backup reached replicaDB and returned successfully!",
-	}, nil
+	return &proto.Bid{Id: "Backup updateret"}, nil
 }
 
-func doBackup(ctx context.Context, s *ITU_databaseServer) {
-	if s.replicaClient == nil {
-		return
-	}
 
-	_, err := s.replicaClient.SendBackup(ctx, &proto.Backup{
+func (s *ITU_databaseServer) doBackup(ctx context.Context) error {
+	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	_, err := s.replicaClient.SendBackup(ctx2, &proto.Backup{
 		Ongoing:       s.auction.ongoing,
 		HigestBid:     s.auction.highestBid,
 		Timestamp:     s.auction.timestamp,
 		HighestBidder: s.auction.highestBidder,
 		EndTime:       s.auction.endTime,
 	})
-
-	if err != nil {
-		log.Printf("Backup failed: %v", err)
-	}
+	return err
 }
 
 func (s *ITU_databaseServer) startClock() {
