@@ -29,12 +29,19 @@ func main() {
 	// get message should be result
 	// we keep getmessage for error checking
 
+	scanner := bufio.NewScanner(os.Stdin)
 	currentID := 1
+
+	var clientstruct = new(Client)
+	clientstruct.clock = NewClock()
+	clientstruct.username = createUser(scanner)
+	fmt.Println("Welcome to the Auction\n   Post a bid with 'Bid 'Amount''\n   Get the status with 'Status'")
 
 	for {
 		// port := fmt.Sprintf("port:800%d", currentID)
 		port := fmt.Sprintf("localhost:800%d", currentID)
-		log.Printf("Attempting to connect to %s...", port)
+
+		log.Printf("Connected to %s...", port)
 
 		conn, err := grpc.NewClient(port, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -57,13 +64,8 @@ func main() {
 			continue
 		}
 
-		var clientstruct = new(Client)
-		clientstruct.clock = NewClock()
-
-		clientstruct.username = createUser()
-
-		for {
-			handleUserInput(clientstruct, client)
+		if !handleUserInput(clientstruct, client, scanner) {
+			break
 		}
 	}
 }
@@ -75,8 +77,7 @@ func switchID(id int) int {
 	return 1
 }
 
-func handleUserInput(clientstruct *Client, client proto.ITUDatabaseClient) {
-	scanner := bufio.NewScanner(os.Stdin)
+func handleUserInput(clientstruct *Client, client proto.ITUDatabaseClient, scanner *bufio.Scanner) bool {
 	for scanner.Scan() {
 		var input = strings.Split(scanner.Text(), " ")
 		if input[0] == "Bid" {
@@ -87,10 +88,12 @@ func handleUserInput(clientstruct *Client, client proto.ITUDatabaseClient) {
 		} else {
 			log.Printf("Unknown command: %s", os.Args[0])
 		}
+		return true
 	}
+	return false
 }
 
-func bid(clientstruct *Client, amount int64, client proto.ITUDatabaseClient) {
+func bid(clientstruct *Client, amount int64, client proto.ITUDatabaseClient) bool {
 	// Bid
 	_, err := client.PlaceBid(context.Background(), &proto.Bid{
 		Id:        clientstruct.username,
@@ -98,16 +101,24 @@ func bid(clientstruct *Client, amount int64, client proto.ITUDatabaseClient) {
 		Timestamp: int64(clientstruct.clock.GetTime()),
 	})
 	if err != nil {
-		return
+
+		fmt.Println("------------------------------------------------")
+		fmt.Println("    Connection to server lost. Switched to backup.")
+		fmt.Println("    Your previous bid was NOT processed.")
+		fmt.Println("    Please enter your bid again.")
+		fmt.Println("------------------------------------------------")
+
+		return false
 	}
 	clientstruct.clock.Increment()
+	return true
 }
 
-func status(clientstruct *Client, client proto.ITUDatabaseClient) {
+func status(clientstruct *Client, client proto.ITUDatabaseClient) bool {
 	result, err := client.PrintStatus(context.Background(), &proto.Empty{})
 	if err != nil {
 		log.Println("Failed to get auction status:", err)
-		return
+		return false
 	}
 
 	if !result.AuctionIsOngoing {
@@ -118,11 +129,11 @@ func status(clientstruct *Client, client proto.ITUDatabaseClient) {
 	}
 
 	clientstruct.clock.Increment()
+	return true
 }
 
-func createUser() string {
+func createUser(scanner *bufio.Scanner) string {
 	fmt.Println("Enter Username: ")
-	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 	username := scanner.Text()
 

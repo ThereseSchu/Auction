@@ -20,8 +20,8 @@ type ITU_databaseServer struct {
 	replicaClient proto.ITUDatabaseClient
 	messages      []string
 	auction       Auction
-	mu            sync.Mutex
 	globalTick    int64
+	mu            sync.Mutex
 }
 
 type Auction struct {
@@ -67,6 +67,11 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*pro
 	if s.auction.highestBid == 0 {
 		s.startAuction(id, timestamp, bidAmount)
 		log.Printf("Auctionen er sat igang med et beløb på %d ---logical timer = (%d)", bidAmount, s.globalTick)
+
+		if s.replicaClient != nil {
+			s.doBackup(ctx)
+		}
+
 		return &proto.Ack{
 			Status:    proto.BidStatus_SUCCESS,
 			Timestamp: s.globalTick,
@@ -92,6 +97,8 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*pro
 		}, nil
 	}
 
+	s.updateAuction(id, timestamp, bidAmount)
+
 	if s.replicaClient != nil {
 		err := s.doBackup(ctx)
 		if err != nil {
@@ -103,7 +110,6 @@ func (s *ITU_databaseServer) PlaceBid(ctx context.Context, bid *proto.Bid) (*pro
 		}
 	}
 
-	s.updateAuction(id, timestamp, bidAmount)
 	log.Printf("Ny højeste bud: %d af %s ---logical timer = (%d)", bidAmount, id, s.globalTick)
 	return &proto.Ack{
 		Status:    proto.BidStatus_SUCCESS,
@@ -183,7 +189,6 @@ func (s *ITU_databaseServer) SendBackup(ctx context.Context, in *proto.Backup) (
 	return &proto.Bid{Id: "Backup updateret"}, nil
 }
 
-
 func (s *ITU_databaseServer) doBackup(ctx context.Context) error {
 	ctx2, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
@@ -202,13 +207,13 @@ func (s *ITU_databaseServer) startClock() {
 	ticker := time.NewTicker(5 * time.Second)
 	for range ticker.C {
 		s.mu.Lock()
+
 		s.globalTick++
 
 		if s.auction.ongoing && s.globalTick > s.auction.endTime {
 			s.auction.ongoing = false
 			log.Println("Auktionen er forbi")
 		}
-
 		s.mu.Unlock()
 	}
 }
@@ -228,5 +233,3 @@ func (s *ITU_databaseServer) updateAuction(name string, timestamp int64, bidAmou
 	s.auction.timestamp = timestamp
 	s.auction.highestBidder = name
 }
-
-//
